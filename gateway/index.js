@@ -11,12 +11,6 @@ const QUEUE_NAME = 'link';
 let CHANNEL;
 let CONNECTION;
 
-const generateUuid = () => {
-    return Math.random().toString() +
-            Math.random().toString() +
-            Math.random().toString();
-}
-
 const getGreeting = async (msg, connection) => {
     let res;
     res = await request(connection, QUEUE_NAME, msg);
