@@ -1,7 +1,8 @@
 const amqplib = require('amqplib');
 const { createClient } = require('redis');
 const express = require('express');
-const {request } = require('amqplib-rpc')
+const { request } = require('amqplib-rpc');
+const config = require('config');
 
 const app = express() ;
 const redisClient = createClient();
@@ -22,10 +23,14 @@ app.get("/:login", async (req, res) => {
     try {
         const login = req.params['login'];
         console.log(`processing ${login}`);
-        const greeting = await getGreeting(login, CONNECTION);
-        console.log(`processed ${greeting}`);
+        let value = await redisClient.get(login);
+        if (!value) {
+            value = await getGreeting(login, CONNECTION);
+            await redisClient.set(login, value + ' cached');
+        }
+        console.log(`processed ${value}`);
         return res.status(200).json({
-            message: 'hi' + ' ' + greeting
+            message: value
         });
     } catch(e) {
         return res.status(400).json({
@@ -36,14 +41,11 @@ app.get("/:login", async (req, res) => {
 
 const start = async () => {
     try {
-        const connection = await amqplib.connect('amqp://localhost');
-        const channel = await connection.createChannel()
-        await channel.assertQueue(QUEUE_NAME + '.request');
-        await channel.assertQueue(QUEUE_NAME + '.response');
+        const connection = await amqplib.connect(config.get('AMQP_URL'));
         CHANNEL = channel;
         CONNECTION = connection;
 
-        await redisClient.connect()
+        await redisClient.connect(config.get('REDIS_URL'))
         app.listen(PORT, () => {
             console.log(`gateway is listening PORT ${PORT}`);
         })
