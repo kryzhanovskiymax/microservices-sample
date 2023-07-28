@@ -7,6 +7,22 @@ const config = require('config');
 const PORT = 8484;
 const QUEUE_NAME = 'link';
 
+const createUser = async (user) => {
+    const exists = await User.findOne({login: user});
+    if (!exists) {
+        const newUser = new User({ login: user });
+        await newUser.save();
+        return {
+            message: "Пользователь успешно создан"
+        }
+    } else {
+        return {
+            message: "Пользователь уже существует"
+        }
+    }
+}
+
+
 const start = async () => {
     try {
         const clusterUrl = config.get('DATABASE_URL');
